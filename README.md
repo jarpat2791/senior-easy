@@ -35,7 +35,7 @@ Aplikacja dostępna pod adresem: [(https://jarpat2791.github.io/senior-easy/)](h
 
 ```bash
 # Sklonuj repozytorium
-git clone https://github.com/twoja-nazwa-uzytkownika/senior-easy.git
+git clone https://github.com/jarpat2791/senior-easy.git
 
 # Otwórz plik index.html w przeglądarce
 ```

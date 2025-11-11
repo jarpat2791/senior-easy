@@ -46,7 +46,7 @@ MIT License - możesz swobodnie używać i modyfikować aplikację.
 
 ## 👨‍💻 Autor
 
-Twoje imię - [Twój GitHub](https://github.com/twoja-nazwa-uzytkownika)
+Twoje imię - [Twój GitHub](https://github.com/jarpat2791)
 
 ## 🤝 Wsparcie
 

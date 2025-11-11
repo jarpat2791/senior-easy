@@ -10,7 +10,6 @@
     body { margin: 0; padding: 0; }
     .rounded-3xl { border-radius: 1.5rem; }
     .rounded-2xl { border-radius: 1rem; }
-    /* prosty modal */
     .modal-bg { background: rgba(0,0,0,0.5); position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; z-index:50; }
     .modal { width: 100%; max-width: 900px; max-height: 90vh; overflow:auto; background: white; padding: 1rem; border-radius: 1rem; }
     textarea { font-family: monospace; }
@@ -30,7 +29,7 @@
     function SeniorEasyApp() {
       const [currentScreen, setCurrentScreen] = useState('home');
 
-      // --- Leki (nie w localStorage w tym przykładzie) ---
+      // --- Leki ---
       const [medications, setMedications] = useState([
         { id: 1, name: 'Acard', time: '08:00', taken: false },
         { id: 2, name: 'Metformin', time: '12:00', taken: false },
@@ -132,7 +131,46 @@
         }
       };
 
-      // --- WebRTC helpers ---
+      // === POPRAWIONA FUNKCJA makeCall ===
+      // Próbuje otworzyć tel: (na telefonie powinno wywołać aplikację telefoniczną).
+      // Dodatkowo kopiuje numer do schowka i wyświetla informację dla użytkownika.
+      const makeCall = async (contact) => {
+        if (!contact) { alert('Brak numeru do wybrania'); return; }
+        const raw = (typeof contact === 'string') ? contact : (contact.phone || '');
+        if (!raw) { alert('Brak numeru telefonu'); return; }
+
+        // Normalizacja — pozostawiamy + i cyfry
+        const phoneForTel = raw.replace(/[^\d+]/g, '');
+
+        try {
+          // Spróbuj otworzyć tel: (na większości telefonów/softphonów)
+          window.location.href = `tel:${phoneForTel}`;
+
+          // Skopiuj numer do schowka — przydatne na desktopie
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(raw);
+            alert(`Numer ${raw} skopiowany do schowka.\nJeśli połączenie nie zostało zainicjowane, wklej numer w aplikacji telefonicznej.`);
+          } else {
+            // Fallback — prompt do ręcznego kopiowania
+            prompt('Skopiuj numer i wklej w aplikacji telefonicznej:', raw);
+          }
+        } catch (err) {
+          // Jeśli przeglądarka zablokowała, pokaz prompt jako ostateczność
+          console.error(err);
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(raw);
+              alert(`Numer ${raw} skopiowany do schowka. Wklej w aplikacji telefonicznej.`);
+            } else {
+              prompt('Skopiuj numer:', raw);
+            }
+          } catch (e2) {
+            prompt('Skopiuj numer:', raw);
+          }
+        }
+      };
+
+      // --- WebRTC helpers (jak wcześniej) ---
       const ensureLocalStream = async () => {
         if (localStreamRef.current) return localStreamRef.current;
         try {
@@ -148,18 +186,14 @@
       };
 
       const createPeerConnection = () => {
-        // jeśli już istnieje, rozłącz poprzednią
         if (pcRef.current) {
-          try { pcRef.current.close(); } catch(e){/* ignore */ }
+          try { pcRef.current.close(); } catch(e){}
           pcRef.current = null;
           icelistRef.current = [];
         }
-        const pc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         pcRef.current = pc;
 
-        // remote stream
         const remoteStream = new MediaStream();
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
 
@@ -170,7 +204,6 @@
         pc.onicecandidate = (ev) => {
           if (ev.candidate) {
             icelistRef.current.push(ev.candidate);
-            // update signal json so user can copy updated candidates
             updateSignalTextCurrent();
           }
         };
@@ -185,23 +218,17 @@
       const updateSignalTextCurrent = () => {
         const pc = pcRef.current;
         if (!pc || !pc.localDescription) return;
-        const obj = {
-          sdp: pc.localDescription,
-          candidates: icelistRef.current
-        };
+        const obj = { sdp: pc.localDescription, candidates: icelistRef.current };
         setSignalText(JSON.stringify(obj, null, 2));
       };
 
-      // Caller: create offer, gather local stream, attach tracks
       const createOffer = async () => {
         try {
           const stream = await ensureLocalStream();
           const pc = createPeerConnection();
-          // add tracks
           stream.getTracks().forEach(track => pc.addTrack(track, stream));
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
-          // wait a bit for ICE to gather some candidates (optional), but we still update as they arrive
           setTimeout(updateSignalTextCurrent, 500);
         } catch (err) {
           console.error(err);
@@ -209,28 +236,21 @@
         }
       };
 
-      // Callee: given remoteOffer JSON, set remote desc and create answer
       const createAnswerFromOffer = async () => {
         try {
           if (!remotePasteText) { alert('Wklej najpierw ofertę (offer JSON) do pola "Wklej ofertę".'); return; }
           const offerObj = JSON.parse(remotePasteText);
-          // ensure local stream
           const stream = await ensureLocalStream();
           const pc = createPeerConnection();
-          // add local tracks
           stream.getTracks().forEach(track => pc.addTrack(track, stream));
-          // set remote description (offer)
           await pc.setRemoteDescription(new RTCSessionDescription(offerObj.sdp));
-          // add any incoming candidates from offerObj
           if (offerObj.candidates && Array.isArray(offerObj.candidates)) {
             for (const c of offerObj.candidates) {
-              try { await pc.addIceCandidate(c); } catch(e){/*ignore*/ }
+              try { await pc.addIceCandidate(c); } catch(e){}
             }
           }
-          // create answer
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
-          // update signal JSON (answer + our candidates)
           setTimeout(updateSignalTextCurrent, 500);
         } catch (err) {
           console.error(err);
@@ -238,7 +258,6 @@
         }
       };
 
-      // Caller: paste remote answer JSON & set remote desc + add candidates
       const setRemoteAnswerFromPaste = async () => {
         try {
           if (!remotePasteText) { alert('Wklej odpowiedź (answer JSON) w pole "Wklej odpowiedź".'); return; }
@@ -248,7 +267,7 @@
           await pc.setRemoteDescription(new RTCSessionDescription(answerObj.sdp));
           if (answerObj.candidates && Array.isArray(answerObj.candidates)) {
             for (const c of answerObj.candidates) {
-              try { await pc.addIceCandidate(c); } catch(e){/*ignore*/ }
+              try { await pc.addIceCandidate(c); } catch(e){}
             }
           }
         } catch (err) {
@@ -257,12 +276,8 @@
         }
       };
 
-      // General paste handler (user can paste offer/answer into same field and choose action)
-      const handlePasteSignal = (text) => {
-        setRemotePasteText(text);
-      };
+      const handlePasteSignal = (text) => { setRemotePasteText(text); };
 
-      // Open call modal for a contact
       const openCallModal = (contact) => {
         setCallContact(contact);
         setSignalText('');
@@ -271,33 +286,21 @@
       };
 
       const closeCallModal = () => {
-        // close pc and stop local stream
         if (pcRef.current) { try { pcRef.current.close(); } catch(e){} pcRef.current = null; }
-        if (localStreamRef.current) {
-          localStreamRef.current.getTracks().forEach(t => t.stop());
-          localStreamRef.current = null;
-        }
+        if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
         setLocalStreamActive(false);
         setCallModalOpen(false);
         setConnectionState('');
-        setSignalText('');
-        setRemotePasteText('');
-        icelistRef.current = [];
+        setSignalText(''); setRemotePasteText(''); icelistRef.current = [];
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
       };
 
-      // UI helpers: copy to clipboard
       const copyToClipboard = async (text) => {
-        try {
-          await navigator.clipboard.writeText(text);
-          alert('Skopiowano do schowka.');
-        } catch (e) {
-          prompt('Skopiuj ręcznie poniższy tekst:', text);
-        }
+        try { await navigator.clipboard.writeText(text); alert('Skopiowano do schowka.'); }
+        catch { prompt('Skopiuj ręcznie poniższy tekst:', text); }
       };
 
-      // Simple UI: when starting call from contact, open modal and allow createOffer/createAnswer/paste
       const startVideoCallFromContact = (contact) => {
         openCallModal(contact);
       };
@@ -459,7 +462,6 @@
                     <textarea readOnly rows="6" value={signalText} className="w-full mt-2 p-2 border rounded-2xl text-sm"></textarea>
                     <div className="flex mt-2 space-x-2">
                       <button onClick={() => copyToClipboard(signalText)} className="bg-gray-200 px-3 py-1 rounded-2xl">Kopiuj JSON</button>
-                      <button onClick={() => { navigator.clipboard.writeText(signalText).catch(()=>{}); }} className="bg-gray-200 px-3 py-1 rounded-2xl">Kopiuj (alt)</button>
                     </div>
                     <div className="mt-3 text-sm text-gray-600">Po otrzymaniu odpowiedzi (answer) od drugiej osoby, wklej ją w pole po prawej (Wklej odpowiedź) i naciśnij "Ustaw odpowiedź".</div>
                   </div>

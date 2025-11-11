@@ -13,7 +13,7 @@ Aplikacja dla seniorów ułatwiająca codzienne życie i kontakt z rodziną.
 
 ## 🚀 Demo na żywo
 
-Aplikacja dostępna pod adresem: [https://twoja-nazwa-uzytkownika.github.io/senior-easy](https://twoja-nazwa-uzytkownika.github.io/senior-easy)
+Aplikacja dostępna pod adresem: [(https://jarpat2791.github.io/senior-easy/)](https://jarpat2791.github.io/senior-easy/)
 
 *(Zamień `twoja-nazwa-uzytkownika` na swoją nazwę użytkownika GitHub)*
 

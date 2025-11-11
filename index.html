@@ -309,8 +309,8 @@
         <div>
           {/* Nav */}
           <div className="bg-white rounded-3xl shadow-2xl p-4 mb-6 flex justify-between items-center">
-            <button onClick={() => setCurrentScreen('home')} className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-2xl">🏠</button>
-            <div className="text-3xl font-bold text-gray-800">
+            <button onClick={() => setCurrentScreen('home')} className="bg-blue-400 hover:bg-blue-500 text-white p-4 rounded-2xl">🏠</button>
+            <div className="text-3xl font-bold text-gray-600">
               {currentScreen === 'home' && 'Strona Główna'}
               {currentScreen === 'medications' && 'Leki'}
               {currentScreen === 'contacts' && 'Rodzina'}
@@ -327,10 +327,10 @@
             {/* Home */}
             {currentScreen === 'home' && (
               <div className="grid grid-cols-2 gap-6">
-                <button onClick={() => setCurrentScreen('contacts')} className="bg-blue-500 text-white p-8 rounded-3xl text-3xl">📞 Rodzina</button>
-                <button onClick={() => setCurrentScreen('medications')} className="bg-purple-500 text-white p-8 rounded-3xl text-3xl">💊 Leki</button>
-                <button onClick={() => setCurrentScreen('services')} className="bg-orange-500 text-white p-8 rounded-3xl text-3xl">📍 Usługi</button>
-                <button onClick={() => setCurrentScreen('settings')} className="bg-gray-500 text-white p-8 rounded-3xl text-3xl">⚙️ Ustawienia</button>
+                <button onClick={() => setCurrentScreen('contacts')} className="bg-blue-400 text-white p-8 rounded-3xl text-3xl">📞 Rodzina</button>
+                <button onClick={() => setCurrentScreen('medications')} className="bg-purple-400 text-white p-8 rounded-3xl text-3xl">💊 Leki</button>
+                <button onClick={() => setCurrentScreen('services')} className="bg-orange-400 text-white p-8 rounded-3xl text-3xl">📍 Usługi</button>
+                <button onClick={() => setCurrentScreen('settings')} className="bg-gray-400 text-white p-8 rounded-3xl text-3xl">⚙️ Ustawienia</button>
               </div>
             )}
 

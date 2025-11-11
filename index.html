@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="pl">
 <head>
   <meta charset="utf-8" />
@@ -54,6 +54,9 @@
       const [newServicePhone, setNewServicePhone] = useState('');
       const [newServiceIcon, setNewServiceIcon] = useState('');
 
+      const [editingContact, setEditingContact] = useState(null);
+      const [editingService, setEditingService] = useState(null);
+
       useEffect(() => { localStorage.setItem('medications', JSON.stringify(medications)); }, [medications]);
       useEffect(() => { localStorage.setItem('familyContacts', JSON.stringify(familyContacts)); }, [familyContacts]);
       useEffect(() => { localStorage.setItem('localServices', JSON.stringify(localServices)); }, [localServices]);
@@ -97,11 +100,51 @@
         }
       };
 
+      const deleteContact = (id) => setFamilyContacts(prev => prev.filter(c=>c.id!==id));
+
+      const startEditContact = (contact) => {
+        setEditingContact(contact.id);
+        setNewContactName(contact.name);
+        setNewContactPhone(contact.phone);
+        setNewContactApp(contact.app);
+      };
+
+      const saveEditContact = (id) => {
+        setFamilyContacts(prev => prev.map(c => c.id===id ? {...c, name:newContactName, phone:newContactPhone, app:newContactApp} : c));
+        setEditingContact(null);
+        setNewContactName(''); setNewContactPhone(''); setNewContactApp('');
+      };
+
+      const cancelEditContact = () => {
+        setEditingContact(null);
+        setNewContactName(''); setNewContactPhone(''); setNewContactApp('');
+      };
+
       const addService = () => {
         if(newServiceName && newServicePhone){
           setLocalServices(prev => [...prev, {id:Date.now(), name:newServiceName, phone:newServicePhone, icon:newServiceIcon||'🏢'}]);
           setNewServiceName(''); setNewServicePhone(''); setNewServiceIcon('');
         }
+      };
+
+      const deleteService = (id) => setLocalServices(prev => prev.filter(s=>s.id!==id));
+
+      const startEditService = (service) => {
+        setEditingService(service.id);
+        setNewServiceName(service.name);
+        setNewServicePhone(service.phone);
+        setNewServiceIcon(service.icon);
+      };
+
+      const saveEditService = (id) => {
+        setLocalServices(prev => prev.map(s => s.id===id ? {...s, name:newServiceName, phone:newServicePhone, icon:newServiceIcon||'🏢'} : s));
+        setEditingService(null);
+        setNewServiceName(''); setNewServicePhone(''); setNewServiceIcon('');
+      };
+
+      const cancelEditService = () => {
+        setEditingService(null);
+        setNewServiceName(''); setNewServicePhone(''); setNewServiceIcon('');
       };
 
       const clearData = () => {
@@ -196,18 +239,40 @@
                 <h2 className="text-4xl font-bold text-center mb-8">Kontakty Rodzinne</h2>
                 {familyContacts.map(c=>(
                   <div key={c.id} className="bg-white border-4 border-blue-500 p-6 rounded-3xl shadow-xl mb-4">
-                    <div className="flex items-center space-x-6 mb-4">
-                      <span className="text-6xl">{c.avatar}</span>
-                      <div className="flex-1">
-                        <div className="text-3xl font-bold text-gray-800">{c.name}</div>
-                        <div className="text-xl text-gray-500">{c.phone}</div>
-                        <div className="text-lg text-gray-400">{c.app?`(${c.app})`:''}</div>
+                    {editingContact === c.id ? (
+                      <div className="space-y-4">
+                        <input type="text" placeholder="Imię i nazwisko" value={newContactName} onChange={e=>setNewContactName(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl"/>
+                        <input type="text" placeholder="Numer telefonu z +48" value={newContactPhone} onChange={e=>setNewContactPhone(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl"/>
+                        <select value={newContactApp} onChange={e=>setNewContactApp(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl">
+                          <option value="">Brak aplikacji</option>
+                          <option value="whatsapp">WhatsApp</option>
+                          <option value="viber">Viber</option>
+                        </select>
+                        <div className="flex space-x-3">
+                          <button onClick={()=>saveEditContact(c.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl">💾 Zapisz</button>
+                          <button onClick={cancelEditContact} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-4 rounded-2xl">❌ Anuluj</button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex space-x-3">
-                      <button onClick={()=>makeCall(c)} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl flex items-center justify-center">📞 Zadzwoń</button>
-                      <button onClick={()=>startVideoCall(c)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-2xl flex items-center justify-center">🎥 Wideo</button>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center space-x-6 mb-4">
+                          <span className="text-6xl">{c.avatar}</span>
+                          <div className="flex-1">
+                            <div className="text-3xl font-bold text-gray-800">{c.name}</div>
+                            <div className="text-xl text-gray-500">{c.phone}</div>
+                            <div className="text-lg text-gray-400">{c.app?`(${c.app})`:''}</div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-3">
+                          <button onClick={()=>makeCall(c)} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl flex items-center justify-center">📞 Zadzwoń</button>
+                          <button onClick={()=>startVideoCall(c)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-2xl flex items-center justify-center">🎥 Wideo</button>
+                        </div>
+                        <div className="flex space-x-3 mt-3">
+                          <button onClick={()=>startEditContact(c)} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-2xl">✏️ Edytuj</button>
+                          <button onClick={()=>deleteContact(c.id)} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-2xl">🗑️ Usuń</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
                 <div className="bg-blue-50 border-4 border-blue-300 p-6 rounded-3xl space-y-4">
@@ -229,14 +294,36 @@
               <div className="space-y-6">
                 <h2 className="text-4xl font-bold text-center mb-8">Lokalne Usługi</h2>
                 {localServices.map(s=>(
-                  <button key={s.id} onClick={()=>makeCall(s)} className="w-full bg-white hover:bg-orange-50 border-4 border-orange-500 p-8 rounded-3xl shadow-xl flex items-center space-x-6 mb-4">
-                    <span className="text-6xl">{s.icon}</span>
-                    <div className="flex-1 text-left">
-                      <div className="text-3xl font-bold text-gray-800">{s.name}</div>
-                      <div className="text-xl text-gray-500">{s.phone}</div>
-                    </div>
-                    <span className="text-5xl">📞</span>
-                  </button>
+                  <div key={s.id} className="bg-white border-4 border-orange-500 p-6 rounded-3xl shadow-xl mb-4">
+                    {editingService === s.id ? (
+                      <div className="space-y-4">
+                        <input type="text" placeholder="Nazwa" value={newServiceName} onChange={e=>setNewServiceName(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl"/>
+                        <input type="text" placeholder="Telefon" value={newServicePhone} onChange={e=>setNewServicePhone(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl"/>
+                        <input type="text" placeholder="Emoji/Ikona" value={newServiceIcon} onChange={e=>setNewServiceIcon(e.target.value)} className="w-full text-2xl p-4 border-2 border-gray-300 rounded-2xl"/>
+                        <div className="flex space-x-3">
+                          <button onClick={()=>saveEditService(s.id)} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl">💾 Zapisz</button>
+                          <button onClick={cancelEditService} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-4 rounded-2xl">❌ Anuluj</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center space-x-6 mb-4">
+                          <span className="text-6xl">{s.icon}</span>
+                          <div className="flex-1 text-left">
+                            <div className="text-3xl font-bold text-gray-800">{s.name}</div>
+                            <div className="text-xl text-gray-500">{s.phone}</div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-3">
+                          <button onClick={()=>makeCall(s)} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl flex items-center justify-center">📞 Zadzwoń</button>
+                        </div>
+                        <div className="flex space-x-3 mt-3">
+                          <button onClick={()=>startEditService(s)} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-2xl">✏️ Edytuj</button>
+                          <button onClick={()=>deleteService(s.id)} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-2xl">🗑️ Usuń</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ))}
                 <div className="bg-orange-50 border-4 border-orange-300 p-6 rounded-3xl space-y-4">
                   <h3 className="text-2xl font-bold text-center">Dodaj Usługę</h3>

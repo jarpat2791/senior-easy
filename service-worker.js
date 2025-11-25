@@ -1,97 +1,57 @@
-const CACHE_NAME = 'senior-easy';
+const CACHE_NAME = 'senior-easy-v2';
+const BASE_PATH = '/senior-easy/';
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'manifest.json',
+  BASE_PATH + 'icon-192.png',
+  BASE_PATH + 'icon-512.png',
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/react@18/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+  'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
-// Instalacja Service Worker
 self.addEventListener('install', event => {
-  console.log('Service Worker: Instalowanie...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Service Worker: Buforowanie plików...');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Service Worker: Wszystkie pliki zostały zbuforowane');
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.log('Service Worker: Błąd podczas buforowania:', error);
-      })
+      .then(cache => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Aktywacja Service Worker
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Aktywacja...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) {
-            console.log('Service Worker: Usuwanie starego cache:', cache);
-            return caches.delete(cache);
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      console.log('Service Worker: Aktywowany!');
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Interceptowanie żądań
 self.addEventListener('fetch', event => {
-  // Pomijamy żądania do zewnętrznych API
-  if (event.request.url.includes('api.whatsapp.com') || 
-      event.request.url.includes('viber://') ||
-      event.request.url.includes('tel:') ||
-      event.request.url.includes('sms:')) {
-    return;
-  }
-
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Zwróć zasób z cache jeśli istnieje
         if (response) {
           return response;
         }
-
-        // W przeciwnym razie wykonaj żądanie sieciowe
-        return fetch(event.request)
-          .then(response => {
-            // Sprawdź czy otrzymaliśmy prawidłową odpowiedź
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Klonuj odpowiedź
-            const responseToCache = response.clone();
-
-            // Dodaj do cache
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
+        return fetch(event.request).then(response => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
-          })
-          .catch(error => {
-            console.log('Service Worker: Błąd fetch:', error);
-            // Możesz zwrócić fallback tutaj
+          }
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
           });
+          return response;
+        });
       })
   );
-});
-
-// Obsługa wiadomości
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });

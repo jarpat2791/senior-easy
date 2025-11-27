@@ -497,41 +497,56 @@
         setNotifications(prev => [newNotif, ...prev]);
       };
 
-      const markMedicationTaken = id => {
-        const medication = medications.find(med => med.id === id);
-        if (!medication) return;
-        
-    setMedications(savedMeds ? JSON.parse(savedMeds) : [
-    {
-      id: 1,
-      name: 'Acard',
-      time: '08:00',
-      days: [0,1,2,3,4,5,6],
-      takenHistory: [] // Nowe pole - historia przyjęć
-    },
-    {
-      id: 2,
-      name: 'Metformin', 
-      time: '12:00',
-      days: [0,1,2,3,4,5,6],
-      takenHistory: []
-    },
-    {
-      id: 3,
-      name: 'Amlozek',
-      time: '20:00',
-      days: [0,1,2,3,4,5,6],
-      takenHistory: []
-    }
-  ]);
-        
-        if (careMode) {
-          setSelectedMedication(medication);
-          setShowNotifyDialog(true);
-        } else {
-          addNotification(`Lek "${medication.name}" został przyjęty`);
+    const markMedicationTaken = (id) => {
+  const medication = medications.find(med => med.id === id);
+  if (!medication) return;
+
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+  const currentDayOfWeek = today.getDay(); // 0 = niedziela, 1 = poniedziałek, etc.
+
+  // Sprawdź czy lek jest zaplanowany na dzisiejszy dzień
+  if (!medication.days.includes(currentDayOfWeek)) {
+    addNotification(`Lek "${medication.name}" nie jest zaplanowany na dzisiaj`);
+    return;
+  }
+
+  // Sprawdź czy lek już został przyjęty dzisiaj
+  const alreadyTakenToday = medication.takenHistory.some(
+    record => record.date === todayString
+  );
+
+  if (alreadyTakenToday) {
+    addNotification(`Lek "${medication.name}" został już przyjęty dzisiaj`);
+    return;
+  }
+
+  // Dodaj do historii przyjęć
+  const updatedMedications = medications.map(med => 
+    med.id === id 
+      ? {
+          ...med,
+          takenHistory: [
+            ...med.takenHistory,
+            {
+              date: todayString,
+              time: new Date().toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'}),
+              dayOfWeek: currentDayOfWeek
+            }
+          ]
         }
-      };
+      : med
+  );
+
+  setMedications(updatedMedications);
+  
+  if (careMode) {
+    setSelectedMedication(medication);
+    setShowNotifyDialog(true);
+  } else {
+    addNotification(`Lek "${medication.name}" został przyjęty o ${new Date().toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'})}`);
+  }
+};
 
       const sendNotification = (contactId) => {
         if (!selectedMedication) return;

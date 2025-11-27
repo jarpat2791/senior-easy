@@ -32,7 +32,7 @@ Aplikacja mobilna ułatwiająca seniorom kontakt z rodziną i zarządzanie lekam
 
 ## 🌐 Demo Online
 
-[Aplikacja dostępna online przez GitHub Pages]([https://jarpat2791.github.io/senior-easy/])
+[Aplikacja dostępna online przez GitHub Pages](https://jarpat2791.github.io/senior-easy/)
 
 ## 📱 Instalacja z Google Play
 

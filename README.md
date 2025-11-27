@@ -1,6 +1,6 @@
 # Senior-Easy - Aplikacja dla Seniorów
 
-![Senior-Easy Logo](icons/icon-512.png)
+![Senior-Easy Logo](/icon-512.png)
 
 Aplikacja mobilna ułatwiająca seniorom kontakt z rodziną i zarządzanie lekami.
 
